@@ -9,5 +9,5 @@
 
 #' @useDynLib cellshape LOCOEFA_
 LOCOEFA <- function(x) {
-  .C(LOCOEFA_,as.numeric(x),dim(x),as.numeric(array(0,c(52,6))))[[3]]
+  .C(LOCOEFA_,as.numeric(x),dim(x),as.numeric(array(0,c(52,7))))[[3]]
 }

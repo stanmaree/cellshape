@@ -4,11 +4,12 @@
 #include <float.h>
 
 #define N 50
-#define DEBUG 1
+#define DEBUG 0
 #define MAXERROR 1e-13
 
 double T;
 int K;
+double area;
 
 typedef struct datapoints {
   double x;
@@ -82,7 +83,7 @@ void ReadData(double *x,int *n,double *out)
   int lines;
 
   lines=n[0]+1;
-  printf("datapoints: %d\n",lines);
+  //printf("datapoints: %d\n",lines);
   
   if(((contour=(Datapoints *)calloc(lines,sizeof(Datapoints)))==NULL)) {
     fprintf(stderr,"Error in memory allocation\n");
@@ -90,9 +91,10 @@ void ReadData(double *x,int *n,double *out)
   }
   
   K=0;
+  area=x[3*(lines-1)];
   for(i=0;i<lines-1;i++) {
-    contour[K].x=x[i];
-    contour[K].y=x[i+lines-1];
+    contour[K].x=x[i+lines-1];
+    contour[K].y=x[i+2*(lines-1)];
     //check if not accidentally same point; if so, ignore
     if(K==0 || fabs(contour[K].x-contour[K-1].x)>MAXERROR ||
        fabs(contour[K].y-contour[K-1].y)>MAXERROR)
@@ -263,6 +265,7 @@ void CalculateLOCOCoefficients(double *out)
     mode[i].lambda21=-sin(mode[i].theta)*mode[i].aprime+cos(mode[i].theta)*mode[i].cprime;
     mode[i].lambda2=-sin(mode[i].theta)*mode[i].bprime+cos(mode[i].theta)*mode[i].dprime;
 
+    /*
     if(DEBUG || fabs(mode[i].lambda12)>MAXERROR || fabs(mode[i].lambda21)>MAXERROR || mode[i].lambda1<0 || mode[i].lambda1 < fabs(mode[i].lambda2)) {
       if(fabs(mode[i].lambda12)>MAXERROR || fabs(mode[i].lambda21)>MAXERROR)
 	fprintf(stderr,"Warning: off-diagonal Lambda matrix unequal to zero:\n");
@@ -274,7 +277,8 @@ void CalculateLOCOCoefficients(double *out)
       fprintf(stdout,"(%g\t%g)\n",mode[i].lambda1,mode[i].lambda12);
       fprintf(stdout,"(%g\t%g)\n\n",mode[i].lambda21,mode[i].lambda2);
     }
-
+    */
+    
     //Equation 32: lambdaplus, lambdaminus 
     mode[i].lambdaplus=(mode[i].lambda1+mode[i].lambda2)/2.;
     mode[i].lambdaminus=(mode[i].lambda1-mode[i].lambda2)/2.;
@@ -289,8 +293,8 @@ void CalculateLOCOCoefficients(double *out)
   mode[0].locooffsetc=mode[0].c;
 
   if(1) {
-    fprintf(stdout,"\n\noffset:\n===============\n\n");
-    fprintf(stdout,"LOCO-EFA A0 offset:\ta=%g\tc=%g\n",mode[0].locooffseta,mode[0].locooffsetc);
+    //fprintf(stdout,"\n\noffset:\n===============\n\n");
+    //fprintf(stdout,"LOCO-EFA A0 offset:\ta=%g\tc=%g\n",mode[0].locooffseta,mode[0].locooffsetc);
   }
 
   //Below eq. 41: A+(l=0)
@@ -314,14 +318,15 @@ void CalculateLOCOCoefficients(double *out)
   }
 
   if(1) {
-    fprintf(stdout,"\n\nLn quadruplets:\n===============\n\n");
+    //fprintf(stdout,"\n\nLn quadruplets:\n===============\n\n");
     for(i=0;i<=N+1;i++) {
-      fprintf(stdout,"LOCO-EFA mode %d:\tlambdaplus=%g\tlambdaminus=%g\tzetaplus=%g\tzetaminus=%g\n",i,mode[i].locolambdaplus,mode[i].locolambdaminus,mode[i].locozetaplus,mode[i].locozetaminus);
-      out[i+N+2]=mode[i].locolambdaplus;
-      out[i+2*(N+2)]=mode[i].locolambdaminus;
-      out[i+3*(N+2)]=mode[i].locozetaplus;
-      out[i+4*(N+2)]=mode[i].locozetaminus;
-      out[i+5*(N+2)]=mode[i].locolambdaplus/(mode[i].locolambdaplus+mode[i].locolambdaminus+DBL_EPSILON);
+      //fprintf(stdout,"LOCO-EFA mode %d:\tlambdaplus=%g\tlambdaminus=%g\tzetaplus=%g\tzetaminus=%g\n",i,mode[i].locolambdaplus,mode[i].locolambdaminus,mode[i].locozetaplus,mode[i].locozetaminus);
+      out[i]=i;
+      out[i+2*(N+2)]=mode[i].locolambdaplus;
+      out[i+3*(N+2)]=mode[i].locolambdaminus;
+      out[i+4*(N+2)]=mode[i].locozetaplus;
+      out[i+5*(N+2)]=mode[i].locozetaminus;
+      out[i+6*(N+2)]=mode[i].locolambdaplus/(mode[i].locolambdaplus+mode[i].locolambdaminus+DBL_EPSILON);
     }
   }
 
@@ -353,14 +358,14 @@ void CalculateLOCOCoefficients(double *out)
   for(i=1;i<=N+1;i++) {
     mode[i].locoL=sqrt(mode[i].locolambdaplus*mode[i].locolambdaplus+mode[i].locolambdaminus*mode[i].locolambdaminus+2.*mode[i].locolambdaplus*mode[i].locolambdaminus*cos(mode[i].locozetaplus-mode[i].locozetaminus-2.*mode[1].locozetaplus));
     //the next line applies area normalisation, if wanted
-    //mode[i].locoL/=sqrt(25793);
+    mode[i].locoL/=sqrt(area);
   }
   
   if(1) {
-    fprintf(stdout,"\n\nLn scalar:\n==========\n\n");
+    //    fprintf(stdout,"\n\nLn scalar:\n==========\n\n");
     for(i=0;i<=N+1;i++) {
-      fprintf(stdout,"LOCO-EFA mode %d:\tLn=%g\n",i,mode[i].locoL);
-      out[i]=mode[i].locoL;
+      //fprintf(stdout,"LOCO-EFA mode %d:\tLn=%g\n",i,mode[i].locoL);
+      out[i+N+2]=mode[i].locoL;
     }
   }
 }
