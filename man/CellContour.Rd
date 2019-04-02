@@ -7,12 +7,15 @@
 CellContour(x)
 }
 \arguments{
-\item{array}{of x and y values of the image}
+\item{x}{a 2D array indicating all pixels assigned to the cell shape.}
 }
 \description{
-This function allows you to determine the cell contour based upon a black and white image
+This function allows you to determine the cell contour based upon a black and white image array.
+The function returns an array containing the number of contour points; x-position; y-position; total area.
 }
 \examples{
-CellContour()
+img <- readPNG("cell.png")
+tmp<-array(CellContour(as.matrix(img)),dim=c(100000,4))
+contour<-array(tmp,dim=c(tmp[1][1],4))
 }
 \keyword{contour}

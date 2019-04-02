@@ -7,12 +7,16 @@
 LOCOEFA(x)
 }
 \arguments{
-\item{array}{of x and y coordinates of the outline}
+\item{x}{an array containing the number of contour points; x-position; y-position; total area.
+The input array is most straightforwardly generated using the CellContour function.}
 }
 \description{
 This function allows you to calculate the LOCO-EFA coefficients based upon a cell outline
 }
 \examples{
-LOCOEFA()
+img <- readPNG("cell.png")
+tmp<-array(CellContour(as.matrix(img)),dim=c(100000,4))
+contour<-array(tmp,dim=c(tmp[1][1],4))
+shapedescriptors<-array(LOCOEFA(as.matrix(contour)),dim=c(52,7))
 }
 \keyword{LOCO-EFA}
