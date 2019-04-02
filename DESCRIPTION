@@ -3,7 +3,7 @@ Title: Analysing Cell Shape Using LOCO-EFA
 Version: 0.0.0.9000
 Authors@R: person("Stan", "Mar<U+00E9>e", email = "marees@cardiff.ac.uk", role = c("aut", "cre"))
 Description: This package sets up a pipeline to analyse complex 2D cell shapes derived from microscopy images.
-Depends: R (>= 3.4.4)
+Depends: R (>= 3.3.2)
 License: GPL-2 | GPL-3
 Encoding: UTF-8
 LazyData: true
