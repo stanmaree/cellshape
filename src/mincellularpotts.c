@@ -153,8 +153,11 @@ Cell *CNew(Cell *newcell, int maxcells,int maxtypes)
     AllocateUserCol(cellboundarycolor);
   if(!userCol[cellboundarycolor][0])
     ColorTable(cellboundarycolor,cellboundarycolor,BLACK);
+  //because of R issue temporarily outcommented
+  /*
   if(perimeterconstraint || hexperimeterconstraint)
     InitCellPosition(newcell);
+  */
   return(newcell);
 }
 
@@ -196,7 +199,7 @@ void InitCellPosition(Cell* cell)
 {
   int i;
   double nr2,nc2;
-  //static int warning=0;
+  static int warning=0;
 
   if(cell->shape==NULL) {
     nr2=(double)nrow/2.;
@@ -212,14 +215,12 @@ void InitCellPosition(Cell* cell)
       cell->shape[i].meany=nr2;
     }
   }
-  /*
   else if(!warning) {
     fprintf(stderr,"InitCellPosition: warning: I assume that this is a repeated call to InitCellPosition.\n");
     fprintf(stderr,"InitCellPosition: warning: If not, the program will crash. In that case, change in your program\n");
     fprintf(stderr,"InitCellPosition: warning: `Cell cells;' into `static Cell cells;'.\n");
     warning=1;
   }
-  */
 }
 
 void UpdateWideCellNeighbours(TYPE** a,Cell* cell)

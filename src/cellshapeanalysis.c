@@ -40,19 +40,15 @@ extern int specialcelltype;
 
 void MyInitLOCOEFA(Cell *cell)
 {
-  static int firsttime=0;
-  
-  if(firsttime || cell->contour==NULL) {
-    if((cell->contour=(Contour **)calloc((size_t)cell->maxcells,sizeof(Contour*)))==NULL) {
-      fprintf(stderr,"InitLOCOEFA: error in memory allocation\n");
-      exit(EXIT_FAILURE);
-    }
+  //note that this MyInitLOCOEFA should never be called a second time for the same Cell struct
+  if((cell->contour=(Contour **)calloc((size_t)cell->maxcells,sizeof(Contour*)))==NULL) {
+    fprintf(stderr,"InitLOCOEFA: error in memory allocation\n");
+    exit(EXIT_FAILURE);
   }
-  if(firsttime || cell->contourlength==NULL) {
-    if((cell->contourlength=(int *)calloc((size_t)cell->maxcells,sizeof(int)))==NULL) {
-      fprintf(stderr,"InitLOCOEFA: error in memory allocation\n");
-      exit(EXIT_FAILURE);
-    }
+  
+  if((cell->contourlength=(int *)calloc((size_t)cell->maxcells,sizeof(int)))==NULL) {
+    fprintf(stderr,"InitLOCOEFA: error in memory allocation\n");
+    exit(EXIT_FAILURE);
   }
 }
 
@@ -98,6 +94,8 @@ int DetermineTotalNoOfCells(int *x,int *n)
   //allocate cells
   CNew(&cells,maxcells,totalcelltypes);
   InitCellPosition(&cells);
+  //becuase of R issue
+  cells.shape->neighbour=NULL;
   MyInitLOCOEFA(&cells);
 
   return cellnumber;
@@ -332,6 +330,11 @@ void CellContour_(int *x,int *n,int *out)
   //so first time (after DetermineTotalNoOfCells) totalcells will be bigger than second time (after RunOutline2D)
 
   specialcelltype=-1;
+  //protection step: under R, globally initialised variables are not guaranteed to be zero
+  cells.shape=NULL;
+  originalcells.shape=NULL;
+  reconstructedcells.shape=NULL;
+
   totalcells=DetermineTotalNoOfCells(x,n);
   
   CNew(&originalcells,totalcells+1,totalcelltypes); //maxsigma+1 because we have to count 0 as well

@@ -155,6 +155,12 @@ void CalculateEFACoefficients()
   }
 
   //Equation 7: alpha0, gamma0
+  for(j=0;j<=N;j++) {
+    mode[j].alpha=0.;
+    mode[j].beta=0.;
+    mode[j].gamma=0.;
+    mode[j].delta=0.;
+  }
   mode[0].alpha=contour[0].x;
   mode[0].gamma=contour[0].y;
   for(i=1;i<=K;i++) {
@@ -265,8 +271,7 @@ void CalculateLOCOCoefficients(double *out)
     mode[i].lambda21=-sin(mode[i].theta)*mode[i].aprime+cos(mode[i].theta)*mode[i].cprime;
     mode[i].lambda2=-sin(mode[i].theta)*mode[i].bprime+cos(mode[i].theta)*mode[i].dprime;
 
-    /*
-    if(DEBUG || fabs(mode[i].lambda12)>MAXERROR || fabs(mode[i].lambda21)>MAXERROR || mode[i].lambda1<0 || mode[i].lambda1 < fabs(mode[i].lambda2)) {
+    if(DEBUG /*|| fabs(mode[i].lambda12)>MAXERROR || fabs(mode[i].lambda21)>MAXERROR || mode[i].lambda1<0 || mode[i].lambda1 < fabs(mode[i].lambda2)*/) {
       if(fabs(mode[i].lambda12)>MAXERROR || fabs(mode[i].lambda21)>MAXERROR)
 	fprintf(stderr,"Warning: off-diagonal Lambda matrix unequal to zero:\n");
       if(mode[i].lambda1<0)
@@ -277,8 +282,7 @@ void CalculateLOCOCoefficients(double *out)
       fprintf(stdout,"(%g\t%g)\n",mode[i].lambda1,mode[i].lambda12);
       fprintf(stdout,"(%g\t%g)\n\n",mode[i].lambda21,mode[i].lambda2);
     }
-    */
-    
+
     //Equation 32: lambdaplus, lambdaminus 
     mode[i].lambdaplus=(mode[i].lambda1+mode[i].lambda2)/2.;
     mode[i].lambdaminus=(mode[i].lambda1-mode[i].lambda2)/2.;
@@ -292,9 +296,9 @@ void CalculateLOCOCoefficients(double *out)
   mode[0].locooffseta=mode[0].a;
   mode[0].locooffsetc=mode[0].c;
 
-  if(1) {
-    //fprintf(stdout,"\n\noffset:\n===============\n\n");
-    //fprintf(stdout,"LOCO-EFA A0 offset:\ta=%g\tc=%g\n",mode[0].locooffseta,mode[0].locooffsetc);
+  if(DEBUG) {
+    fprintf(stdout,"\n\noffset:\n===============\n\n");
+    fprintf(stdout,"LOCO-EFA A0 offset:\ta=%g\tc=%g\n",mode[0].locooffseta,mode[0].locooffsetc);
   }
 
   //Below eq. 41: A+(l=0)
@@ -318,9 +322,12 @@ void CalculateLOCOCoefficients(double *out)
   }
 
   if(1) {
-    //fprintf(stdout,"\n\nLn quadruplets:\n===============\n\n");
+    if(DEBUG)
+      fprintf(stdout,"\n\nLn quadruplets:\n===============\n\n");
     for(i=0;i<=N+1;i++) {
-      //fprintf(stdout,"LOCO-EFA mode %d:\tlambdaplus=%g\tlambdaminus=%g\tzetaplus=%g\tzetaminus=%g\n",i,mode[i].locolambdaplus,mode[i].locolambdaminus,mode[i].locozetaplus,mode[i].locozetaminus);
+      if(DEBUG) {
+	fprintf(stdout,"LOCO-EFA mode %d:\tlambdaplus=%g\tlambdaminus=%g\tzetaplus=%g\tzetaminus=%g\n",i,mode[i].locolambdaplus,mode[i].locolambdaminus,mode[i].locozetaplus,mode[i].locozetaminus);
+      }
       out[i]=i;
       out[i+2*(N+2)]=mode[i].locolambdaplus;
       out[i+3*(N+2)]=mode[i].locolambdaminus;
@@ -362,9 +369,11 @@ void CalculateLOCOCoefficients(double *out)
   }
   
   if(1) {
-    //    fprintf(stdout,"\n\nLn scalar:\n==========\n\n");
+    if(DEBUG)
+      fprintf(stdout,"\n\nLn scalar:\n==========\n\n");
     for(i=0;i<=N+1;i++) {
-      //fprintf(stdout,"LOCO-EFA mode %d:\tLn=%g\n",i,mode[i].locoL);
+      if(DEBUG)
+	fprintf(stdout,"LOCO-EFA mode %d:\tLn=%g\n",i,mode[i].locoL);
       out[i+N+2]=mode[i].locoL;
     }
   }

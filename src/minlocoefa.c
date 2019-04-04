@@ -16,7 +16,8 @@ void InitLOCOEFAContour(Cell *cell,int cellnumber,int contourlength)
     exit(EXIT_FAILURE);
   }
   if(cell->contour[cellnumber]!=NULL) {
-    free(cell->contour[cellnumber]);
+    //because of R issues
+    //free(cell->contour[cellnumber]);
     cell->contour[cellnumber]=NULL;
   }
     
@@ -42,7 +43,8 @@ void UpdateCellContour(TYPE **state,TYPE **a,Cell *cell)
   
   for(c=0;c<cell->maxcells;c++) {
     if(cell->contour[c]!=NULL) {
-      free(cell->contour[c]);
+      //because of R issues
+      //free(cell->contour[c]);
       cell->contour[c]=NULL;
       cell->contourlength[c]=0;
     }
