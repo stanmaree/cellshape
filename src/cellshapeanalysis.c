@@ -315,12 +315,12 @@ void RunOutline2D(int *out)
   if(ncells) {
     SaveCellOutlines(out);
   }
-  /*  else {
-    printf("No cells selected\n");
+  else {
+    printf("No cells selected\n\tMost likely either the matrix containing the image is empty\n\t(please check this matrix and how you assign an image to this matrix),\n\tor the shape to be analysed is touching the edge of the image\n\t(please check the image you are analysing).\n\tThis code will now kill your R session,\n\tin order not to cause trouble downstream due to corrupted data.\n");
+    exit(EXIT_FAILURE);
   }
-  */
 }   
-	
+
 void CellContour_(int *x,int *n,int *out)
 {
   //now we need to know how many cells we will have, as well as setting of nooftimepoints
