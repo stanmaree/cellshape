@@ -67,6 +67,13 @@ TYPE **NewPlane(int row,int col)
   return a;
 }
 
+int PlaneFree(TYPE **a)
+{
+  free(a[0]);
+  free(a);
+  return 0;
+}
+
 TYPE **Fill(TYPE **a,TYPE c)
 {
   PLANE(

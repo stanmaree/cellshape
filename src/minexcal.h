@@ -100,6 +100,7 @@ extern "C" {
   TYPE **NewP();
   TYPE **New();
   TYPE **NewPlane(int,int);
+  int PlaneFree(TYPE**);
   TYPE **Fill(TYPE**,TYPE);
   TYPE **Copy(TYPE**,TYPE**);
 

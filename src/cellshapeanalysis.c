@@ -1,6 +1,10 @@
 //libraries
 #include "minexcal.h"
 
+#define MYMAXDEPTH_ 10000
+static int myoverflow=0;
+static int mydepth;
+
 typedef struct extras {
   int timepoint;
   int oldsigma;
@@ -35,6 +39,7 @@ extern TYPE boundaryvalue;
 extern int nrow;
 extern int ncol;
 extern int specialcelltype;
+extern int boundary;
 
 /********************************************functions*/
 
@@ -50,6 +55,146 @@ void MyInitLOCOEFA(Cell *cell)
     fprintf(stderr,"InitLOCOEFA: error in memory allocation\n");
     exit(EXIT_FAILURE);
   }
+}
+
+void MyFindCell(TYPE **cellplane,TYPE **typeplane,TYPE **b,int i,int j,int c,int new)
+{
+  int ii,jj;
+
+  if(boundary==WRAP)
+    newindex=NewIndexWrap;
+  else if (boundary==ECHO)
+    newindex=NewIndexEcho;
+  else
+    newindex=NewIndexFixed;
+
+  mydepth=(!new)*mydepth+1;
+  if(mydepth<MYMAXDEPTH_) {
+    b[i][j]=0;
+    jj=newindex(j+1,ncol);
+    if(b[i][jj] && typeplane[i][j]==typeplane[i][jj])
+      MyFindCell(cellplane,typeplane,b,i,jj,c,0);
+    ii=newindex(i+1,nrow);
+    if(b[ii][j] && typeplane[i][j]==typeplane[ii][j])
+      MyFindCell(cellplane,typeplane,b,ii,j,c,0);
+    jj=newindex(j-1,ncol);
+    if(b[i][jj] && typeplane[i][j]==typeplane[i][jj])
+      MyFindCell(cellplane,typeplane,b,i,jj,c,0);
+    ii=newindex(i-1,nrow);
+    if(b[ii][j] && typeplane[i][j]==typeplane[ii][j])
+      MyFindCell(cellplane,typeplane,b,ii,j,c,0);
+    cellplane[i][j]=c;
+  }
+  else
+    myoverflow=1;
+}
+
+TYPE **MyType2Cell(TYPE **cellplane,TYPE **typeplane,int destcell)
+{
+  TYPE **b;
+  TYPE tmpboundaryvalue;
+  int c;
+ 
+  b=New();
+  c=destcell;
+  Fill(b,1);
+  tmpboundaryvalue=boundaryvalue;
+  boundaryvalue=0;
+  Boundaries(b);
+  Boundaries(typeplane);
+  boundaryvalue=tmpboundaryvalue;
+  PLANE(
+        if(b[i][j]) {
+          if(typeplane[i][j]<=specialcelltype) {
+	cellplane[i][j]=typeplane[i][j];
+	b[i][j]=0;
+          }
+          else {
+	MyFindCell(cellplane,typeplane,b,i,j,c,1);
+	if(myoverflow) {
+	  do {
+	    myoverflow=0;
+	    PLANE(
+	          if(cellplane[i][j]==c && !b[i][j]) {
+		cellplane[i][j]=typeplane[i][j];
+		MyFindCell(cellplane,typeplane,b,i,j,c,1);
+	          }
+	          );
+	  } while(myoverflow);
+	}
+	c++;
+	  }
+	}
+        );
+  PlaneFree(b);
+  return cellplane;
+}
+
+void RemoveProtrutions2D(TYPE **target, TYPE **tmpstate)
+{
+  int nswitched;
+  int n,nself,delta,self;
+  int round=0;
+
+  int neighid[9];
+  int neighsize[9];
+
+  //fprintf(stdout,"RemoveProtrutions2D\n");
+  nswitched=0;
+
+  delta=1;
+  while(delta) {
+    delta=0;
+    round++;
+    PLANE(tmpstate[i][j]=target[i][j];);
+
+    PLANE(
+	  self=target[i][j];
+	  nself=0;
+	  NEIGHBOURS(
+		     if(target[i+y][j+x]==self) {
+		       nself++;
+		       if(nself==5)
+			 break;
+		     }
+		     );
+	  if(nself==5)
+	    continue;
+
+	  for(n=1;n<=8;n++) {
+	    neighid[n]=0;
+	    neighsize[n]=0;
+	  }
+
+	  NEIGHBOURS(
+		     if(!(i+y<1 || i+y>nrow || j+x<1 || j+x>ncol)) {
+		       if(target[i+y][j+x]!=self) {
+			 for(n=1;n<=8;n++) {
+			   if(!neighid[n] || neighid[n]==target[i+y][j+x]) {
+			     neighid[n]=target[i+y][j+x];
+			     neighsize[n]++;
+			     break;
+			   }
+			 }
+		       }
+		     }
+		     );
+
+	  for(n=1;n<=8;n++) {
+	    if(neighsize[n]>=5) {
+	      target[i][j]=neighid[n];
+	      delta++;
+	    }
+	    else if(!neighid[n])
+	      break;
+	  }
+	  );
+
+    nswitched+=delta;
+    //fprintf(stdout,"\tin round %d, %d pixels switched\n",round,delta);
+  }
+  //fprintf(stdout,"\tin total, %d pixels switched\n",nswitched);
+  //fprintf(stdout,"\tcomplete\n\n");
 }
 
 int DetermineTotalNoOfCells(int *x,int *n)
@@ -70,6 +215,9 @@ int DetermineTotalNoOfCells(int *x,int *n)
 	image[nrow+1-i][j]=x[(j-1)*nrow+i-1]+1;
 	);
 
+  RemoveProtrutions2D(image,state);
+  MyType2Cell(state,image,1);
+  Copy(image,state);
   //determine ncells
   ncells=0;
   PLANE(ncells=max(ncells,image[i][j]););
@@ -219,73 +367,6 @@ void AssignPerimeter(int celltype,int timepoint,int oldsigma)
   EXTRAS[totalcells].height=EXTRAS[totalcells].maxy-EXTRAS[totalcells].miny+1;
 }
 
-void RemoveProtrutions2D(TYPE **target, TYPE **tmpstate)
-{
-  int nswitched;
-  int n,nself,delta,self;
-  int round=0;
-
-  int neighid[9];
-  int neighsize[9];
-
-  //fprintf(stdout,"RemoveProtrutions2D\n");
-  nswitched=0;
-
-  delta=1;
-  while(delta) {
-    delta=0;
-    round++;
-    PLANE(tmpstate[i][j]=target[i][j];);
-
-    PLANE(
-	  self=target[i][j];
-	  nself=0;
-	  NEIGHBOURS(
-		     if(target[i+y][j+x]==self) {
-		       nself++;
-		       if(nself==5)
-			 break;
-		     }
-		     );
-	  if(nself==5)
-	    continue;
-
-	  for(n=1;n<=8;n++) {
-	    neighid[n]=0;
-	    neighsize[n]=0;
-	  }
-
-	  NEIGHBOURS(
-		     if(!(i+y<1 || i+y>nrow || j+x<1 || j+x>ncol)) {
-		       if(target[i+y][j+x]!=self) {
-			 for(n=1;n<=8;n++) {
-			   if(!neighid[n] || neighid[n]==target[i+y][j+x]) {
-			     neighid[n]=target[i+y][j+x];
-			     neighsize[n]++;
-			     break;
-			   }
-			 }
-		       }
-		     }
-		     );
-
-	  for(n=1;n<=8;n++) {
-	    if(neighsize[n]>=5) {
-	      target[i][j]=neighid[n];
-	      delta++;
-	    }
-	    else if(!neighid[n])
-	      break;
-	  }
-	  );
-
-    nswitched+=delta;
-    //fprintf(stdout,"\tin round %d, %d pixels switched\n",round,delta);
-  }
-  //fprintf(stdout,"\tin total, %d pixels switched\n",nswitched);
-  //fprintf(stdout,"\tcomplete\n\n");
-}
-
 void RunOutline2D(int *out)
 {
   PLANE(
@@ -293,7 +374,6 @@ void RunOutline2D(int *out)
 	outline[i][j]=0;
 	);
 
-  RemoveProtrutions2D(state,image);
   UpdateCFill(state,&cells);
   UpdateCellContour(outline,state,&cells);
   /*
